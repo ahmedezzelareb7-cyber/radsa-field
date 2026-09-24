@@ -363,7 +363,7 @@ function renderVisit(){
     <div class="row" style="margin-top:12px"><button class="btn danger" id="delV">Delete visit</button></div></div>`;
   app.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>{view={name:'unit',id:b.dataset.u};render()});
   app.querySelectorAll('[data-add]').forEach(b=>b.onclick=async()=>{
-    const u={id:newId(),visitId:v.id,kind:b.dataset.add,fields:{},photos:[],createdAt:Date.now(),updatedAt:Date.now()};
+    const u={id:newId(),visitId:v.id,kind:b.dataset.add,fields:b.dataset.add==='Apron'?{visual:'No defects',img_result:'No defects',img_method:'Fluoroscopy'}:{},photos:[],createdAt:Date.now(),updatedAt:Date.now()};
     await put('units',u); units.push(u); view={name:'unit',id:u.id}; render()});
   const saveVisit=async()=>{const fac=$('#v_fac').value.trim().toUpperCase(), d=$('#v_date').value; if(!fac) return;
     Object.assign(v,{facility:fac,date:d}); await put('visits',v); setSave('Saved on this phone')};
@@ -421,7 +421,8 @@ function renderUnit(){
   $('#toVisit').onclick=goBack;
   const nx=$('#nextItem'); if(nx) nx.onclick=async()=>{
     await flushUnit(local.id);
-    const keep={}; for(const k of ['room','manufacturer','pb_eq','img_method']) if(!isEmpty(local.fields[k])) keep[k]=local.fields[k];
+    const keep={visual:'No defects',img_result:'No defects'};
+    for(const k of ['room','manufacturer','model','item_type','pb_eq','img_method']) if(!isEmpty(local.fields[k])) keep[k]=local.fields[k];
     const m=String(local.fields.item_id||'').match(/^(.*?)(\d+)$/); if(m) keep.item_id=m[1]+String(Number(m[2])+1).padStart(m[2].length,'0');
     const u={id:newId(),visitId:local.visitId,kind:'Apron',fields:keep,photos:[],createdAt:Date.now(),updatedAt:Date.now()};
     await put('units',u); units.push(u); view={name:'unit',id:u.id}; render(); window.scrollTo(0,0)};
