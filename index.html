@@ -218,8 +218,22 @@ const KINDS = {
       ['ct_ped_abd_disp','Pediatric abdomen – displayed CTDIvol','mGy',N,{req:1}],
       ['ct_dose_prov','Dosimetry provisional?','',S,{opts:['','No','Yes']}]]],
     ['Radiation survey',SURVEY.filter(f=>!['sc_other_name','sc_other','sc_other_class','sc_other_t'].includes(f[0]))]]},
+  Apron:{name:'Lead apron / collar', short:'APRON', sections:[
+    ['Item',[
+      ['item_id','Item ID / label','',T,{req:1,ph:'AP-01'}],
+      ['item_type','Type','',S,{req:1,opts:['','Apron – front','Apron – wrap-around','Vest + skirt','Thyroid collar','Gloves','Gonad shield','Eye glasses','Other']}],
+      ['pb_eq','Lead equivalence','mm Pb',N,{req:1,ph:'0.5'}],
+      ['room','Department / location','',T,{ph:'Radiology Department'}],
+      ['manufacturer','Manufacturer','',T,{}],['model','Model','',T,{}],['item_sn','Serial / size','',T,{}]]],
+    ['Inspection',[
+      ['visual','Visual & tactile','',S,{req:1,opts:['','No defects','Defects found']}],
+      ['visual_note','Visual notes','',T,{wide:1,ph:'e.g. torn fastener, creases'}],
+      ['img_method','Imaged with','',S,{opts:['','Fluoroscopy','Radiography','Not imaged']}],
+      ['img_result','Image finding','',S,{req:1,opts:['','No defects','Defects found']}],
+      ['defect_area','Largest defect area','mm²',N,{h:'Length × width of the largest hole/crack'}],
+      ['defect_loc','Defect location','',S,{opts:['','Critical area (front torso / gonads)','Non-critical (seams, overlap, back)','Thyroid collar']}]]]]},
 };
-const PHOTO_LABELS = ['Rating plate','Tube plate','Console / settings','Survey meter','Phantom image','Room layout','Other'];
+const PHOTO_LABELS = ['Defect (image)','Defect (photo)','Rating plate','Tube plate','Console / settings','Survey meter','Phantom image','Room layout','Other'];
 
 /* ---------- local storage on this phone (IndexedDB) ---------- */
 const DBNAME='radsa-field', STORES=['visits','units','photos'];
@@ -261,6 +275,15 @@ function warnings(u){
   if(mk!==null) for(const k of ['kv_lo','kv_hi']){const v=n(k); if(v!==null && v>mk) add(k,`Above max kV (${mk})`,1)}
   if(mk!==null) for(const k of ['set_kv','set_kv_fluoro']){ if(!isEmpty(F[k])){const hi=String(F[k]).split(/[,;\s]+/).map(Number).filter(x=>!isNaN(x)); if(hi.some(x=>x>mk)) add(k,`A value is above max kV (${mk})`,1)}}
   for(const k of ['set_kv','set_t','set_mas','set_kv_fluoro']){ if(!isEmpty(F[k]) && /[^0-9.,;\s\-]/.test(F[k])) add(k,'Use numbers separated by commas',1)}
+  if(u.kind==='Apron'){
+    if(F.img_result==='Defects found'){
+      if(isEmpty(F.defect_area)) add('defect_area','Enter the defect size – needed for accept / reject',1);
+      if(isEmpty(F.defect_loc)) add('defect_loc','Choose where the defect is',1);
+      const a=n('defect_area'), lim={'Thyroid collar':11,'Non-critical (seams, overlap, back)':670}[F.defect_loc]||15;
+      if(a!==null && a>lim) add('defect_area',`Above ${lim} mm² – this item will be REJECTED`);
+    }
+    const pb=n('pb_eq'); if(pb!==null && (pb<0.1||pb>1)) add('pb_eq','Usual values 0.25, 0.35 or 0.5 mm Pb');
+  }
   return w;
 }
 function statusPill(u){const m=missing(u).length, w=Object.values(warnings(u)).filter(x=>x.bad).length;
@@ -328,7 +351,7 @@ function renderVisit(){
   app.innerHTML=`<h1>${esc(v.facility)}</h1><p class="sub mono">${fmtDate(v.date)}</p>
     <h2>Units tested</h2>
     <div class="list">${us.length?us.map(u=>`<button class="card" data-u="${esc(u.id)}"><span class="kind">${KINDS[u.kind]?.short||u.kind}</span>
-      <div class="grow"><div class="t">${esc(u.fields?.room||'Room not set')}</div><div class="m">${esc([u.fields?.manufacturer,u.fields?.model].filter(Boolean).join(' ')||'—')}${u.photos?.length?` · ${u.photos.length} photo${u.photos.length>1?'s':''}`:''}</div></div>
+      <div class="grow"><div class="t">${esc(u.kind==='Apron'?(u.fields?.item_id||'Item ID not set')+(u.fields?.item_type?' · '+u.fields.item_type:''):(u.fields?.room||'Room not set'))}</div><div class="m">${esc([u.fields?.manufacturer,u.fields?.model].filter(Boolean).join(' ')||'—')}${u.photos?.length?` · ${u.photos.length} photo${u.photos.length>1?'s':''}`:''}</div></div>
       ${statusPill(u)}</button>`).join(''):`<div class="empty">No units yet. Add the first one below.</div>`}</div>
     <h2>Add a unit</h2>
     <div class="kinds">${Object.entries(KINDS).map(([k,d])=>`<button class="btn ghost" data-add="${k}">${d.name}</button>`).join('')}</div>
@@ -371,7 +394,7 @@ function renderUnit(){
   local={...u0,fields:{...(u0.fields||{})},photos:[...(u0.photos||[])]};
   const K=KINDS[local.kind]; setHeader(`${v?v.facility:''} · ${K.name}`,true);
   const w=warnings(local), miss=missing(local);
-  app.innerHTML=`<h1>${esc(local.fields.room||K.name)}</h1><p class="sub"><span class="kind">${K.short}</span> ${esc(v?v.facility:'')} · <span class="mono">${fmtDate(v?.date)}</span></p>
+  app.innerHTML=`<h1>${esc(local.kind==='Apron'?(local.fields.item_id||K.name):(local.fields.room||K.name))}</h1><p class="sub"><span class="kind">${K.short}</span> ${esc(v?v.facility:'')} · <span class="mono">${fmtDate(v?.date)}</span></p>
     <div class="panel">
       <div class="row"><strong>Photos</strong><div class="spacer"></div>
         <label class="btn ghost filebtn">Add photo<input type="file" id="phIn" accept="image/*" multiple></label></div>
@@ -394,8 +417,14 @@ function renderUnit(){
     clearTimeout(pending.get(local.id)); pending.delete(local.id);
     for(const p of local.photos) await del('photos',p.id); await del('units',local.id);
     units=units.filter(x=>x.id!==local.id); view={name:'visit',id:local.visitId}; local=null; render()};
-  setBar(`<button class="btn ghost" id="toVisit">Back to visit</button>`);
+  setBar(`<button class="btn ghost" id="toVisit">Back to visit</button>${local.kind==='Apron'?'<button class="btn" id="nextItem">Next item</button>':''}`);
   $('#toVisit').onclick=goBack;
+  const nx=$('#nextItem'); if(nx) nx.onclick=async()=>{
+    await flushUnit(local.id);
+    const keep={}; for(const k of ['room','manufacturer','pb_eq','img_method']) if(!isEmpty(local.fields[k])) keep[k]=local.fields[k];
+    const m=String(local.fields.item_id||'').match(/^(.*?)(\d+)$/); if(m) keep.item_id=m[1]+String(Number(m[2])+1).padStart(m[2].length,'0');
+    const u={id:newId(),visitId:local.visitId,kind:'Apron',fields:keep,photos:[],createdAt:Date.now(),updatedAt:Date.now()};
+    await put('units',u); units.push(u); view={name:'unit',id:u.id}; render(); window.scrollTo(0,0)};
 }
 async function addThumb(p){const u=await photoURL(p.id); const d=document.createElement('div'); d.className='ph';
   d.innerHTML=`<img src="${esc(u)}" alt="${esc(p.label)}"><span>${esc(p.label)}</span>`; $('#phList')?.append(d)}
