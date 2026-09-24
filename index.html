@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B6B66">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>RadSa Field Log</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0} img{max-width:100%} [hidden]{display:none!important}
+
+:root{
+  --ground:#EEF2F1; --surface:#FFFFFF; --sunk:#E3E9E7; --ink:#12201E; --muted:#5B6B68; --line:#CBD5D2;
+  --accent:#0B6B66; --accent-ink:#FFFFFF; --accent-soft:#D5EAE7;
+  --warn:#9A5B00; --warn-soft:#FBEBCF; --bad:#B42318; --bad-soft:#FBE1DE; --ok:#1F7A3A; --ok-soft:#DDF1E2;
+  --radius:10px; --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace; --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  color-scheme:dark; --ground:#0D1614; --surface:#15211F; --sunk:#1C2B28; --ink:#E4ECEA; --muted:#93A5A1; --line:#2B3C39;
+  --accent:#4FB3AA; --accent-ink:#06201D; --accent-soft:#173833; --warn:#E0A541; --warn-soft:#3A2A0E; --bad:#F2796B; --bad-soft:#3D1814; --ok:#6CCB86; --ok-soft:#133220;}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --ground:#0D1614; --surface:#15211F; --sunk:#1C2B28; --ink:#E4ECEA; --muted:#93A5A1; --line:#2B3C39;
+  --accent:#4FB3AA; --accent-ink:#06201D; --accent-soft:#173833; --warn:#E0A541; --warn-soft:#3A2A0E; --bad:#F2796B; --bad-soft:#3D1814; --ok:#6CCB86; --ok-soft:#133220;}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font:15px/1.45 var(--sans);padding-inline:16px;padding-block:0 96px}
+.wrap{max-width:720px;margin:0 auto}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--ground);padding-block:12px 10px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.brand{font-weight:700;letter-spacing:.02em}
+.brand small{display:block;font-weight:500;color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.back{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:6px 10px;font:inherit;cursor:pointer}
+.spacer{flex:1}
+.save{font:12px var(--mono);color:var(--muted)}
+.save.err{color:var(--bad)}
+h1{font-size:20px;margin:18px 0 4px;text-wrap:balance}
+h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:22px 0 8px;font-weight:600}
+.sub{color:var(--muted);margin:0 0 12px}
+button{font:inherit}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:9px;padding:10px 14px;font-weight:600;cursor:pointer;min-height:44px}
+.btn.ghost{background:var(--surface);color:var(--accent)}
+.btn.danger{background:var(--surface);color:var(--bad);border-color:var(--bad)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn:focus-visible,.back:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.list{display:grid;gap:8px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;display:flex;gap:12px;align-items:center;cursor:pointer;text-align:left;color:var(--ink);width:100%}
+.card .t{font-weight:600}
+.card .m{color:var(--muted);font-size:13px}
+.card .grow{flex:1;min-width:0}
+.kind{font:500 12px var(--mono);background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:3px 7px;white-space:nowrap}
+.pill{font:500 12px var(--mono);border-radius:999px;padding:3px 9px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.miss{background:var(--warn-soft);color:var(--warn)} .pill.bad{background:var(--bad-soft);color:var(--bad)}
+.kinds{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media (max-width:420px){.kinds{grid-template-columns:repeat(2,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 12px}
+@media (max-width:460px){.grid{grid-template-columns:1fr}}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f.wide{grid-column:1/-1}
+.f label{font-size:13px;font-weight:600}
+.f label .u{font:400 12px var(--mono);color:var(--muted);margin-left:4px}
+.f .h{font-size:12px;color:var(--muted)}
+.f .w{font-size:12px;color:var(--warn);font-weight:500}
+.f .w.bad{color:var(--bad)}
+input,select,textarea{font:15px var(--sans);color:var(--ink);background:var(--ground);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%;min-height:42px}
+input.num,input.list{font-family:var(--mono);font-variant-numeric:tabular-nums}
+input.req:placeholder-shown,select.req.empty{border-color:var(--warn)}
+input.ai{border-color:var(--accent);background:var(--accent-soft)}
+textarea{min-height:70px;resize:vertical}
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.ph{position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:var(--sunk);aspect-ratio:1;max-width:100%}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph span{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);color:#fff;font-size:11px;padding:2px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.filebtn{position:relative;overflow:hidden}
+.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.note{border-radius:9px;padding:10px 12px;font-size:13px}
+.note.info{background:var(--accent-soft);color:var(--ink)} .note.warn{background:var(--warn-soft);color:var(--ink)} .note.bad{background:var(--bad-soft);color:var(--ink)}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));z-index:6}
+.bar .wrap{display:flex;gap:10px;flex-wrap:wrap}
+.bar .btn{flex:1}
+.empty{color:var(--muted);text-align:center;padding:28px 10px;border:1px dashed var(--line);border-radius:var(--radius)}
+.mono{font-family:var(--mono)}
+.checklist{margin:6px 0 0;padding-left:18px;color:var(--muted);font-size:13px}
+@media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}.card:hover{border-color:var(--accent)}}
+
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="top">
+    <button class="back" id="backBtn" hidden aria-label="Back">←</button>
+    <div class="brand">RadSa Field Log<small id="crumb">QC visits</small></div>
+    <div class="spacer"></div>
+    <span class="save" id="saveState"></span>
+  </header>
+  <main id="app"></main>
+</div>
+<div class="bar" id="bar" hidden><div class="wrap" id="barInner"></div></div>
+
+
+<script>
+
+(() => {
+/* ---------- field catalogue (keys = the report generator's column keys) ---------- */
+const N='num', T='text', L='list', S='select', A='area';
+const ID = [
+  ['room','Room / location','',T,{req:1,ph:'Dental Room 1'}],
+  ['manufacturer','Manufacturer','',T,{req:1}],
+  ['model','Model','',T,{req:1}],
+  ['unit_sn','Unit serial no.','',T,{req:1}],
+  ['tube_sn','Tube serial no.','',T,{req:1}],
+  ['max_kv','Max kV','kV',N,{req:1}],
+  ['max_ma','Max mA','mA',N,{}],
+];
+const SURVEY = [
+  ['bg','Background','µSv/h',N,{req:1,h:'Before exposure'}],
+  ['sc_operator','Operator position','µSv/h',N,{req:1}],
+  ['sc_door','Room door','µSv/h',N,{}],
+  ['sc_corridor','Corridor / outside','µSv/h',N,{}],
+  ['sc_other_name','Other location','',T,{ph:'e.g. Waiting area'}],
+  ['sc_other','Other location reading','µSv/h',N,{}],
+  ['sc_other_class','Other location area','',S,{opts:['','Controlled','Uncontrolled']}],
+  ['sc_other_t','Other location occupancy T','',N,{h:'1, 0.5, 0.2, 0.125 …'}],
+  ['workload','Workload','beam-on min/week',N,{}],
+];
+const METER = ['meter','Meter file name','',T,{wide:1,ph:'leave empty = found automatically',h:'Piranha export in reading\\<month>\\<date>\\<facility>'}];
+const KINDS = {
+  IO:{name:'Dental intraoral', short:'IO', sections:[
+    ['Unit',ID],
+    ['Exposures',[METER,
+      ['block','Unit no. inside the meter file','',N,{req:1,h:'1st unit measured = 1, 2nd = 2 …'}],
+      ['ma','mA used','mA',N,{req:1}],
+      ['kv_lo','Set kV, shots 1-3','kV',N,{req:1}],
+      ['kv_hi','Set kV, shots 4-11','kV',N,{req:1}]]],
+    ['Radiation survey',SURVEY]]},
+  OPG:{name:'Panoramic (OPG)', short:'OPG', sections:[
+    ['Unit',ID],
+    ['Exposures',[METER,
+      ['ma','mA used','mA',N,{}],
+      ['set_kv','Set kV per shot','kV',L,{req:1,wide:1,ph:'70,70,70,80,60',h:'In the order taken. Use - to skip a shot.'}],
+      ['set_t','Set time','ms',L,{req:1,ph:'14100',h:'One value, or one per shot'}],
+      ['n_shots','No. of shots','',N,{}],
+      ['hvl_skip','Leave out of HVL (shot no.)','',L,{ph:'5'}]]],
+    ['Radiation survey',SURVEY]]},
+  Fixed:{name:'Fixed radiography', short:'FIXED', sections:[
+    ['Unit',ID],
+    ['Exposures',[METER,
+      ['set_kv','Set kV per shot','kV',L,{req:1,wide:1,ph:'50,60,70,80,90,100,109,117,130,70,70,70,70,70,70,70'}],
+      ['set_t','Set time per shot','ms',L,{wide:1,ph:'-,-,20,-,…,40,40,40,80,160,380,500'}],
+      ['set_mas','Set mAs per shot','mAs',L,{wide:1,ph:'5,5,5,…,10,10,10,20,40,80,100'}],
+      ['sid','SID','cm',N,{ph:'100'}],
+      ['focal','Focal spot','',S,{opts:['','Small','Large']}]]],
+    ['Collimation',[
+      ['light_l','Light field L','cm',N,{}],['light_w','Light field W','cm',N,{}],
+      ['xray_l','X-ray field L','cm',N,{}],['xray_w','X-ray field W','cm',N,{}],
+      ['iq_centring','Beam centring','% SID',N,{}]]],
+    ['Image quality',[
+      ['iq_spatial','Spatial resolution','lp/mm',N,{}],['iq_contrast','Contrast groups','',N,{}],
+      ['iq_lowcon','Low-contrast discs','',N,{}],['iq_artefacts','Artefacts','',S,{opts:['','NO','YES']}]]],
+    ['Radiation survey',SURVEY]]},
+  Fluoro:{name:'Fluoroscopy', short:'FLUORO', sections:[
+    ['Unit',ID],
+    ['Fluoroscopic mode',[METER,
+      ['n_fluoro','No. of fluoro runs in file','',N,{req:1}],
+      ['set_kv_fluoro','Set kV per fluoro run','kV',L,{req:1,wide:1,ph:'50,60,70,80,90,100,110,120,70,70,70'}],
+      ['hvl_meter','Separate HVL file (optional)','',T,{wide:1}]]],
+    ['Radiographic mode',[
+      ['set_kv','Set kV per shot','kV',L,{req:1,wide:1}],
+      ['set_t','Set time per shot','ms',L,{wide:1}],
+      ['set_mas','Set mAs per shot','mAs',L,{wide:1}],
+      ['sid','SID','cm',N,{}],['focal','Focal spot','',S,{opts:['','Small','Large']}]]],
+    ['Image quality – fluoro',[
+      ['iq_res_f','Resolution','lp/mm',N,{}],['iq_large_f','Large discs','',N,{}],['iq_small_f','Small discs','',N,{}],
+      ['iq_steps_f','Grey steps','',N,{}],['iq_dist_f','Distortion','',S,{opts:['','None','Present']}],['iq_art_f','Artefacts','',S,{opts:['','None','Present']}]]],
+    ['Image quality – radiographic',[
+      ['iq_res_r','Resolution','lp/mm',N,{}],['iq_large_r','Large discs','',N,{}],['iq_small_r','Small discs','',N,{}],
+      ['iq_steps_r','Grey steps','',N,{}],['iq_dist_r','Distortion','',S,{opts:['','None','Present']}],['iq_art_r','Artefacts','',S,{opts:['','None','Present']}],
+      ['iq_images','Phantom images folder (optional)','',T,{wide:1}]]],
+    ['Radiation survey',SURVEY]]},
+  Mammo:{name:'Mammography', short:'MAMMO', sections:[
+    ['Unit',ID.concat([['target_filter','Target / filter','',S,{req:1,opts:['','W/Rh','W/Ag','W/Al','Mo/Mo','Mo/Rh','Rh/Rh']}]])],
+    ['Exposures',[METER,
+      ['set_kv','Set kV per shot','kV',L,{req:1,wide:1,ph:'-,22,23,24,25,26,27,28,29,30,31,32,27,27,27',h:'Use - for a warm-up shot'}]]],
+    ['Dose & compression',[
+      ['agd','AGD','mGy',N,{}],['agd_disp','Displayed AGD','mGy',N,{}],['comp_force','Compression force','N',N,{}]]],
+    ['ACR phantom',[
+      ['ph_fibres','Fibres','',N,{}],['ph_specks','Speck groups','',N,{}],['ph_masses','Masses','',N,{}],
+      ['iq_artefacts','Artefacts','',S,{opts:['','NO','YES']}]]],
+    ['Radiation survey',SURVEY]]},
+  CT:{name:'CT scanner', short:'CT', sections:[
+    ['Unit',ID.filter(f=>f[0]!=='max_ma')],
+    ['Geometry',[METER,
+      ['ct_align_light','Alignment light error','mm',N,{}],['ct_slice_pos','Slice position error','mm',N,{}],
+      ['ct_st_nominal','Nominal slice thickness','mm',L,{}],['ct_st_measured','Measured slice thickness','mm',L,{}],
+      ['ct_distance','BB distance error','mm',N,{}],['ct_table','Table travel error','mm',N,{}]]],
+    ['Resolution & low contrast',[
+      ['ct_res_abd','Adult abdomen','lp/cm',N,{}],['ct_res_chest','Chest HR','lp/cm',N,{}],
+      ['ct_lc_abd_visible','Abd: smallest rod','mm',N,{}],['ct_lc_abd_mass','Abd: 25 mm rod mean','HU',N,{}],
+      ['ct_lc_abd_bkg','Abd: background mean','HU',N,{}],['ct_lc_abd_sd','Abd: background SD','HU',N,{}],
+      ['ct_lc_head_visible','Head: smallest rod','mm',N,{}],['ct_lc_head_mass','Head: 25 mm rod mean','HU',N,{}],
+      ['ct_lc_head_bkg','Head: background mean','HU',N,{}],['ct_lc_head_sd','Head: background SD','HU',N,{}]]],
+    ['CT numbers & uniformity',[
+      ['ct_n_water','Water','HU',N,{}],['ct_n_air','Air','HU',N,{}],['ct_n_teflon','Teflon (bone)','HU',N,{}],
+      ['ct_n_acrylic','Acrylic','HU',N,{}],['ct_n_polyethylene','Polyethylene','HU',N,{}],
+      ['ct_u_center','Centre mean','HU',N,{}],['ct_u_center_sd','Centre SD','HU',N,{}],['ct_u_top','Top (12) mean','HU',N,{}],
+      ['ct_u_right','Right (3) mean','HU',N,{}],['ct_u_bottom','Bottom (6) mean','HU',N,{}],['ct_u_left','Left (9) mean','HU',N,{}],
+      ['ct_artefacts','Artefacts','',S,{opts:['','NONE','PRESENT']}],['ct_display','SMPTE display','',S,{opts:['','Pass','Fail']}]]],
+    ['Dosimetry',[
+      ['ct_scan_mode','Scan mode','',S,{opts:['','Helical','Axial']}],
+      ['ct_adult_head_disp','Adult head – displayed CTDIvol','mGy',N,{req:1}],
+      ['ct_adult_abd_disp','Adult abdomen – displayed CTDIvol','mGy',N,{req:1}],
+      ['ct_ped_abd_disp','Pediatric abdomen – displayed CTDIvol','mGy',N,{req:1}],
+      ['ct_dose_prov','Dosimetry provisional?','',S,{opts:['','No','Yes']}]]],
+    ['Radiation survey',SURVEY.filter(f=>!['sc_other_name','sc_other','sc_other_class','sc_other_t'].includes(f[0]))]]},
+};
+const PHOTO_LABELS = ['Rating plate','Tube plate','Console / settings','Survey meter','Phantom image','Room layout','Other'];
+
+/* ---------- local storage on this phone (IndexedDB) ---------- */
+const DBNAME='radsa-field', STORES=['visits','units','photos'];
+let idb=null;
+function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DBNAME,1);
+  r.onupgradeneeded=()=>{for(const s of STORES) if(!r.result.objectStoreNames.contains(s)) r.result.createObjectStore(s,{keyPath:'id'})};
+  r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error)})}
+function tx(store,mode,fn){return new Promise((res,rej)=>{const t=idb.transaction(store,mode), st=t.objectStore(store); const out=fn(st);
+  t.oncomplete=()=>res(out&&out.result!==undefined?out.result:undefined); t.onerror=()=>rej(t.error)})}
+const put=(store,obj)=>tx(store,'readwrite',st=>st.put(obj));
+const del=(store,id)=>tx(store,'readwrite',st=>st.delete(id));
+const getAll=store=>tx(store,'readonly',st=>st.getAll());
+const getOne=(store,id)=>tx(store,'readonly',st=>st.get(id));
+const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+
+/* ---------- state ---------- */
+let visits=[], units=[], view={name:'visits'}, local=null, pending=new Map();
+const $=s=>document.querySelector(s), app=$('#app');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const fmtDate=s=>{if(!s)return'';const[y,m,d]=s.split('-');return `${d}-${m}-${y}`};
+const allFields=k=>KINDS[k].sections.flatMap(s=>s[1]);
+const isEmpty=v=>v===undefined||v===null||String(v).trim()==='';
+const urls=new Map(); // photo id -> object URL
+function setSave(t,err){const e=$('#saveState');e.textContent=t;e.classList.toggle('err',!!err)}
+
+/* ---------- checks ---------- */
+function missing(u){return allFields(u.kind).filter(f=>f[4].req && isEmpty(u.fields?.[f[0]]))}
+function warnings(u){
+  const F=u.fields||{}, w={}, n=k=>isEmpty(F[k])?null:Number(F[k]);
+  const add=(k,m,bad)=>{w[k]={m,bad}};
+  for(const f of allFields(u.kind)) if(f[3]===N && !isEmpty(F[f[0]]) && isNaN(Number(F[f[0]]))) add(f[0],'Not a number',1);
+  const bg=n('bg'); if(bg!==null && bg>0.3) add('bg',`High for background (usual 0.05–0.15). Typed ${bg}?`);
+  for(const k of ['sc_operator','sc_door','sc_corridor','sc_other']){const v=n(k); if(v!==null){
+    if(bg!==null && v<bg*0.9) add(k,'Lower than background – check the reading');
+    if(v>5) add(k,'Very high – check units (µSv/h)',1);}}
+  const t=n('sc_other_t'); if(t!==null && (t<=0||t>1)) add('sc_other_t','Occupancy T must be between 0 and 1',1);
+  const mk=n('max_kv');
+  if(mk!==null) for(const k of ['kv_lo','kv_hi']){const v=n(k); if(v!==null && v>mk) add(k,`Above max kV (${mk})`,1)}
+  if(mk!==null) for(const k of ['set_kv','set_kv_fluoro']){ if(!isEmpty(F[k])){const hi=String(F[k]).split(/[,;\s]+/).map(Number).filter(x=>!isNaN(x)); if(hi.some(x=>x>mk)) add(k,`A value is above max kV (${mk})`,1)}}
+  for(const k of ['set_kv','set_t','set_mas','set_kv_fluoro']){ if(!isEmpty(F[k]) && /[^0-9.,;\s\-]/.test(F[k])) add(k,'Use numbers separated by commas',1)}
+  return w;
+}
+function statusPill(u){const m=missing(u).length, w=Object.values(warnings(u)).filter(x=>x.bad).length;
+  if(w) return `<span class="pill bad">${w} to fix</span>`; if(m) return `<span class="pill miss">${m} missing</span>`; return `<span class="pill ok">complete</span>`}
+
+/* ---------- saving (coalesced) ---------- */
+function queueUnitSave(u){clearTimeout(pending.get(u.id)); pending.set(u.id,setTimeout(()=>flushUnit(u.id),400)); setSave('Saving…')}
+async function flushUnit(id){
+  clearTimeout(pending.get(id)); pending.delete(id);
+  if(!local||local.id!==id) return;
+  const rec={...local,fields:{...local.fields},photos:[...local.photos],updatedAt:Date.now()};
+  try{await put('units',rec); const i=units.findIndex(u=>u.id===id); if(i>=0) units[i]=rec; else units.push(rec); if(!pending.size) setSave('Saved on this phone')}
+  catch(e){setSave('Not saved – '+(e?.name||'storage error'),1)}
+}
+
+/* ---------- rendering ---------- */
+function setBar(html){const b=$('#bar'); if(!html){b.hidden=true;return} $('#barInner').innerHTML=html; b.hidden=false}
+function setHeader(crumb,back){$('#crumb').textContent=crumb; $('#backBtn').hidden=!back}
+function render(){({visits:renderVisits,newVisit:renderNewVisit,visit:renderVisit,unit:renderUnit})[view.name](); }
+
+function renderVisits(){
+  setHeader('QC visits',false);
+  const rows=[...visits].sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.createdAt||0)-(a.createdAt||0));
+  app.innerHTML=`
+    <h1>Visits</h1>
+    <p class="sub">One visit per facility per day. Everything is kept on this phone.</p>
+    <div class="list">${rows.length?rows.map(v=>{
+      const us=units.filter(u=>u.visitId===v.id); const todo=us.filter(u=>missing(u).length||Object.values(warnings(u)).some(x=>x.bad)).length;
+      return `<button class="card" data-v="${esc(v.id)}"><div class="grow"><div class="t">${esc(v.facility)}</div>
+      <div class="m mono">${fmtDate(v.date)} · ${us.length} unit${us.length===1?'':'s'}</div></div>
+      ${us.length?(todo?`<span class="pill miss">${todo} open</span>`:`<span class="pill ok">ready</span>`):''}
+      ${v.exportedAt?`<span class="pill ok">sent</span>`:''}</button>`}).join(''):`<div class="empty">No visits yet. Start one when you arrive at the clinic.</div>`}</div>
+    <h2>Backup</h2>
+    <div class="panel"><p class="sub" style="margin:0 0 10px">Visits live only on this phone. Save a backup to OneDrive now and then.</p>
+      <div class="row"><button class="btn ghost" id="bk">Save backup</button>
+      <label class="btn ghost filebtn">Restore backup<input type="file" id="rs" accept=".json,application/json"></label></div></div>`;
+  app.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{view={name:'visit',id:b.dataset.v};render()});
+  $('#bk').onclick=backup; $('#rs').onchange=e=>restore(e.target.files[0]);
+  setBar(`<button class="btn" id="newV">New visit</button>`);
+  $('#newV').onclick=()=>{view={name:'newVisit'};render()};
+}
+
+function renderNewVisit(){
+  setHeader('New visit',true);
+  const known=[...new Set(visits.map(v=>v.facility).filter(Boolean))].sort();
+  app.innerHTML=`<h1>New visit</h1><p class="sub">Use the facility's legal name exactly as it should appear on the report.</p>
+    <div class="panel"><div class="grid">
+      <div class="f wide"><label for="nv_fac">Facility (legal name)</label>
+        <input id="nv_fac" list="facList" placeholder="ADVANCE CURE DIAGNOSTIC CENTER-L.L.C" autocomplete="off">
+        <datalist id="facList">${known.map(f=>`<option value="${esc(f)}">`).join('')}</datalist></div>
+      <div class="f"><label for="nv_date">Inspection date</label><input id="nv_date" type="date" value="${today()}"></div>
+    </div></div>`;
+  setBar(`<button class="btn" id="mk">Start visit</button>`);
+  $('#mk').onclick=async()=>{
+    const fac=$('#nv_fac').value.trim().toUpperCase(), d=$('#nv_date').value;
+    if(!fac){$('#nv_fac').focus();return}
+    const v={id:newId(),facility:fac,date:d,createdAt:Date.now()}; await put('visits',v); visits.push(v); view={name:'visit',id:v.id}; render();
+  };
+}
+
+function renderVisit(){
+  const v=visits.find(x=>x.id===view.id); if(!v){view={name:'visits'};return render()}
+  setHeader(fmtDate(v.date),true);
+  const us=units.filter(u=>u.visitId===v.id).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+  app.innerHTML=`<h1>${esc(v.facility)}</h1><p class="sub mono">${fmtDate(v.date)}</p>
+    <h2>Units tested</h2>
+    <div class="list">${us.length?us.map(u=>`<button class="card" data-u="${esc(u.id)}"><span class="kind">${KINDS[u.kind]?.short||u.kind}</span>
+      <div class="grow"><div class="t">${esc(u.fields?.room||'Room not set')}</div><div class="m">${esc([u.fields?.manufacturer,u.fields?.model].filter(Boolean).join(' ')||'—')}${u.photos?.length?` · ${u.photos.length} photo${u.photos.length>1?'s':''}`:''}</div></div>
+      ${statusPill(u)}</button>`).join(''):`<div class="empty">No units yet. Add the first one below.</div>`}</div>
+    <h2>Add a unit</h2>
+    <div class="kinds">${Object.entries(KINDS).map(([k,d])=>`<button class="btn ghost" data-add="${k}">${d.name}</button>`).join('')}</div>
+    <h2>Visit</h2>
+    <div class="panel"><div class="grid">
+      <div class="f wide"><label for="v_fac">Facility (legal name)</label><input id="v_fac" value="${esc(v.facility)}"></div>
+      <div class="f"><label for="v_date">Inspection date</label><input id="v_date" type="date" value="${esc(v.date)}"></div>
+    </div>
+    <div class="row" style="margin-top:12px"><button class="btn danger" id="delV">Delete visit</button></div></div>`;
+  app.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>{view={name:'unit',id:b.dataset.u};render()});
+  app.querySelectorAll('[data-add]').forEach(b=>b.onclick=async()=>{
+    const u={id:newId(),visitId:v.id,kind:b.dataset.add,fields:{},photos:[],createdAt:Date.now(),updatedAt:Date.now()};
+    await put('units',u); units.push(u); view={name:'unit',id:u.id}; render()});
+  const saveVisit=async()=>{const fac=$('#v_fac').value.trim().toUpperCase(), d=$('#v_date').value; if(!fac) return;
+    Object.assign(v,{facility:fac,date:d}); await put('visits',v); setSave('Saved on this phone')};
+  $('#v_fac').onchange=saveVisit; $('#v_date').onchange=saveVisit;
+  const delB=$('#delV'); delB.onclick=async()=>{
+    if(delB.dataset.armed!=='1'){delB.dataset.armed='1';delB.textContent=`Tap again to delete visit and ${us.length} unit(s)`;return}
+    for(const u of us){for(const p of u.photos||[]) await del('photos',p.id); await del('units',u.id)}
+    await del('visits',v.id); visits=visits.filter(x=>x.id!==v.id); units=units.filter(x=>x.visitId!==v.id); view={name:'visits'}; render()};
+  const open=us.filter(u=>missing(u).length||Object.values(warnings(u)).some(x=>x.bad)).length;
+  setBar(`<button class="btn" id="exp" ${us.length?'':'disabled'}>Send to laptop</button>`);
+  $('#exp').onclick=()=>exportVisit(v,us,open);
+}
+
+function fieldHTML(f,F,w){
+  const [k,label,unit,type,o]=f, v=F[k]??'', id='f_'+k, cls=[type===N?'num':'',type===L?'list':'',o.req?'req':''].join(' ');
+  let input;
+  if(type===S) input=`<select id="${id}" data-k="${k}" class="${cls} ${isEmpty(v)?'empty':''}">${o.opts.map(x=>`<option ${String(v)===x?'selected':''} value="${esc(x)}">${x||'—'}</option>`).join('')}</select>`;
+  else if(type===A) input=`<textarea id="${id}" data-k="${k}">${esc(v)}</textarea>`;
+  else input=`<input id="${id}" data-k="${k}" class="${cls}" value="${esc(v)}" placeholder="${esc(o.ph||' ')}" ${type===N?'inputmode="decimal"':''} ${type===L?'autocapitalize="off"':''} autocomplete="off">`;
+  const warn=w[k]?`<div class="w ${w[k].bad?'bad':''}" id="w_${k}">${esc(w[k].m)}</div>`:`<div class="w" id="w_${k}" hidden></div>`;
+  return `<div class="f ${o.wide?'wide':''}"><label for="${id}">${esc(label)}${unit?`<span class="u">${esc(unit)}</span>`:''}${o.req?' *':''}</label>${input}${o.h?`<div class="h">${esc(o.h)}</div>`:''}${warn}</div>`;
+}
+async function photoURL(id){ if(urls.has(id)) return urls.get(id); const p=await getOne('photos',id); if(!p) return ''; const u=URL.createObjectURL(p.blob); urls.set(id,u); return u }
+
+function renderUnit(){
+  const u0=units.find(x=>x.id===view.id); if(!u0){view={name:'visits'};return render()}
+  const v=visits.find(x=>x.id===u0.visitId);
+  local={...u0,fields:{...(u0.fields||{})},photos:[...(u0.photos||[])]};
+  const K=KINDS[local.kind]; setHeader(`${v?v.facility:''} · ${K.name}`,true);
+  const w=warnings(local), miss=missing(local);
+  app.innerHTML=`<h1>${esc(local.fields.room||K.name)}</h1><p class="sub"><span class="kind">${K.short}</span> ${esc(v?v.facility:'')} · <span class="mono">${fmtDate(v?.date)}</span></p>
+    <div class="panel">
+      <div class="row"><strong>Photos</strong><div class="spacer"></div>
+        <label class="btn ghost filebtn">Add photo<input type="file" id="phIn" accept="image/*" multiple></label></div>
+      <div style="color:var(--muted);font-size:13px;margin:6px 0 10px">Rating plates, survey meter, console settings – they go with the visit to the laptop.</div>
+      <div class="photos" id="phList"></div>
+    </div>
+    ${miss.length?`<div class="note warn" style="margin-top:12px" id="missNote">Still needed: ${miss.map(f=>esc(f[1])).join(', ')}</div>`:`<div class="note info" style="margin-top:12px" id="missNote">All required fields are filled.</div>`}
+    ${K.sections.map(([title,fields])=>`<h2>${esc(title)}</h2><div class="panel"><div class="grid">${fields.map(f=>fieldHTML(f,local.fields,w)).join('')}</div></div>`).join('')}
+    <h2>Notes</h2><div class="panel"><div class="grid">${fieldHTML(['remarks','Remarks for the report','',A,{wide:1}],local.fields,w)}</div>
+      <div class="row" style="margin-top:12px"><button class="btn danger" id="delU">Delete this unit</button></div></div>`;
+  (async()=>{for(const p of local.photos) await addThumb(p)})();
+  app.querySelectorAll('[data-k]').forEach(el=>{
+    const on=()=>{const k=el.dataset.k, val=el.value; if(el.tagName==='SELECT') el.classList.toggle('empty',val==='');
+      local.fields[k]=val.trim()===''?null:val.trim(); refreshChecks(); queueUnitSave(local)};
+    el.addEventListener(el.tagName==='SELECT'?'change':'input',on);
+  });
+  $('#phIn').onchange=e=>addPhotos(e.target.files);
+  const delB=$('#delU'); delB.onclick=async()=>{
+    if(delB.dataset.armed!=='1'){delB.dataset.armed='1';delB.textContent='Tap again to delete';return}
+    clearTimeout(pending.get(local.id)); pending.delete(local.id);
+    for(const p of local.photos) await del('photos',p.id); await del('units',local.id);
+    units=units.filter(x=>x.id!==local.id); view={name:'visit',id:local.visitId}; local=null; render()};
+  setBar(`<button class="btn ghost" id="toVisit">Back to visit</button>`);
+  $('#toVisit').onclick=goBack;
+}
+async function addThumb(p){const u=await photoURL(p.id); const d=document.createElement('div'); d.className='ph';
+  d.innerHTML=`<img src="${esc(u)}" alt="${esc(p.label)}"><span>${esc(p.label)}</span>`; $('#phList')?.append(d)}
+function refreshChecks(){
+  const w=warnings(local);
+  app.querySelectorAll('.w[id^="w_"]').forEach(el=>{const k=el.id.slice(2); if(w[k]){el.hidden=false;el.textContent=w[k].m;el.classList.toggle('bad',!!w[k].bad)} else el.hidden=true});
+  const miss=missing(local), n=$('#missNote');
+  if(n){n.className='note '+(miss.length?'warn':'info'); n.textContent=miss.length?'Still needed: '+miss.map(f=>f[1]).join(', '):'All required fields are filled.'}
+}
+
+/* ---------- photos ---------- */
+async function shrink(file){
+  try{const bmp=await createImageBitmap(file); const s=Math.min(1,1800/Math.max(bmp.width,bmp.height));
+    const c=document.createElement('canvas'); c.width=Math.round(bmp.width*s); c.height=Math.round(bmp.height*s);
+    c.getContext('2d').drawImage(bmp,0,0,c.width,c.height); return await new Promise(r=>c.toBlob(b=>r(b||file),'image/jpeg',0.82));}
+  catch(e){return file}
+}
+function askLabel(){return new Promise(res=>{
+  const box=document.createElement('div'); box.className='note info'; box.style.marginTop='10px';
+  box.innerHTML=`<div style="margin-bottom:8px">What is this photo?</div><div class="row">${PHOTO_LABELS.map(l=>`<button class="btn ghost" data-l="${esc(l)}">${esc(l)}</button>`).join('')}</div>`;
+  $('#phList').after(box); box.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>{box.remove();res(b.dataset.l)});
+})}
+async function addPhotos(files){
+  for(const file of [...files]){
+    const label=await askLabel();
+    try{const blob=await shrink(file); const p={id:newId(),label,at:Date.now()};
+      await put('photos',{id:p.id,blob}); local.photos.push(p); queueUnitSave(local); await flushUnit(local.id); await addThumb(p)}
+    catch(e){setSave('Photo not saved – '+(e?.name||'error'),1)}
+  }
+}
+
+/* ---------- send to laptop ---------- */
+const blobToB64=b=>new Promise(r=>{const fr=new FileReader(); fr.onload=()=>r(String(fr.result).split(',')[1]); fr.readAsDataURL(b)});
+async function visitPayload(v,us){
+  const out={app:'radsa-visit',version:1,facility:v.facility,date:v.date,exportedAt:new Date().toISOString(),units:[]};
+  for(const u of us){
+    const photos=[]; for(const p of u.photos||[]){const r=await getOne('photos',p.id); if(r) photos.push({label:p.label,data:await blobToB64(r.blob)})}
+    out.units.push({kind:u.kind,fields:Object.fromEntries(Object.entries(u.fields||{}).filter(([k,x])=>!isEmpty(x))),photos});
+  }
+  return out;
+}
+async function shareOrDownload(name,text,title){
+  const file=new File([text],name,{type:'application/json'});
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file],title}); return true}catch(e){ if(e?.name==='AbortError') return false }
+  }
+  const a=document.createElement('a'); a.href=URL.createObjectURL(file); a.download=name; document.body.append(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000); return true;
+}
+async function exportVisit(v,us,open){
+  if(local) await flushUnit(local.id);
+  setSave('Preparing…');
+  const payload=await visitPayload(v,us);
+  const name=`visit_${v.date}_${v.facility.replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)}.json`;
+  const ok=await shareOrDownload(name,JSON.stringify(payload),'RadSa visit');
+  if(ok){v.exportedAt=Date.now(); await put('visits',v); setSave(open?`Sent – ${open} unit(s) still incomplete`:'Sent')} else setSave('');
+}
+async function backup(){
+  const payload={app:'radsa-backup',version:1,savedAt:new Date().toISOString(),visits,units,photos:[]};
+  for(const r of await getAll('photos')) payload.photos.push({id:r.id,data:await blobToB64(r.blob)});
+  await shareOrDownload(`radsa-field-backup_${today()}.json`,JSON.stringify(payload),'RadSa backup');
+}
+async function restore(file){
+  if(!file) return;
+  try{const B=JSON.parse(await file.text()); if(B.app!=='radsa-backup') throw new Error('not a backup file');
+    for(const v of B.visits||[]) await put('visits',v);
+    for(const u of B.units||[]) await put('units',u);
+    for(const p of B.photos||[]){const bin=Uint8Array.from(atob(p.data),c=>c.charCodeAt(0)); await put('photos',{id:p.id,blob:new Blob([bin],{type:'image/jpeg'})})}
+    visits=await getAll('visits'); units=await getAll('units'); setSave('Backup restored'); render();
+  }catch(e){setSave('Restore failed – '+e.message,1)}
+}
+
+/* ---------- navigation ---------- */
+async function goBack(){
+  if(view.name==='unit'){ if(local) await flushUnit(local.id); const u=units.find(x=>x.id===view.id); local=null; view=u?{name:'visit',id:u.visitId}:{name:'visits'} }
+  else view={name:'visits'};
+  render(); window.scrollTo(0,0);
+}
+$('#backBtn').onclick=goBack;
+
+/* ---------- boot ---------- */
+(async()=>{
+  try{idb=await openDB(); visits=await getAll('visits'); units=await getAll('units');
+    if(navigator.storage?.persist) navigator.storage.persist().catch(()=>{});
+  }catch(e){app.innerHTML=`<div class="note bad" style="margin-top:16px">This browser cannot store data (${esc(e?.message||e)}). Open the page in Chrome or Safari, not in a private window.</div>`;return}
+  render();
+})();
+if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
+})();
+
+</script>
+</body>
+</html>
