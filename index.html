@@ -279,14 +279,18 @@ function warnings(u){
     if(F.img_result==='Defects found'){
       if(isEmpty(F.defect_area)) add('defect_area','Enter the defect size – needed for accept / reject',1);
       if(isEmpty(F.defect_loc)) add('defect_loc','Choose where the defect is',1);
-      const a=n('defect_area'), lim={'Thyroid collar':11,'Non-critical (seams, overlap, back)':670}[F.defect_loc]||15;
+      const a=n('defect_area'), lim=(F.item_type==='Thyroid collar'||F.defect_loc==='Thyroid collar')?11:(F.defect_loc==='Non-critical (seams, overlap, back)'?670:15);
       if(a!==null && a>lim) add('defect_area',`Above ${lim} mm² – this item will be REJECTED`);
     }
     const pb=n('pb_eq'); if(pb!==null && (pb<0.1||pb>1)) add('pb_eq','Usual values 0.25, 0.35 or 0.5 mm Pb');
   }
   return w;
 }
+function apronRejected(u){const F=u.fields||{}; if(F.visual==='Defects found') return true; if(F.img_result!=='Defects found') return false;
+  const a=Number(F.defect_area); if(isEmpty(F.defect_area)||isNaN(a)) return false;
+  const lim=(F.item_type==='Thyroid collar'||F.defect_loc==='Thyroid collar')?11:(F.defect_loc==='Non-critical (seams, overlap, back)'?670:15); return a>lim}
 function statusPill(u){const m=missing(u).length, w=Object.values(warnings(u)).filter(x=>x.bad).length;
+  if(u.kind==='Apron' && !w && !m && apronRejected(u)) return `<span class="pill bad">reject</span>`;
   if(w) return `<span class="pill bad">${w} to fix</span>`; if(m) return `<span class="pill miss">${m} missing</span>`; return `<span class="pill ok">complete</span>`}
 
 /* ---------- saving (coalesced) ---------- */
