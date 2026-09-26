@@ -140,7 +140,8 @@ footer{color:var(--muted);font-size:12px;text-align:center;padding:10px 0 30px}
 <script>
 (() => {
 /* ====== settings for RadSa (edit these two lines) ====== */
-const UPLOAD_URL = '';                 // OneDrive "Request files" link of the folder  RadSa SA Inbox
+const SUBMIT_URL = 'https://script.google.com/macros/s/AKfycby5gM35XFLrGqTFa4Zggc7xezh0EeocKoDZKaw8Z7eNkEKZqHwqxlx4Pcvs3nepzBnW/exec';                 // Google Apps Script web-app URL (RadSa form receiver) - forms go straight to Google Drive
+const UPLOAD_URL = '';                 // optional: an upload page link (not used when SUBMIT_URL is set)
 const SEND_TO    = '';                 // WhatsApp number (e.g. 9715xxxxxxxx) or email shown to the client
 /* ======================================================== */
 
@@ -247,6 +248,7 @@ $('#send').onclick=()=>{
   const safe=V.facility.name.replace(/[^A-Za-z0-9 ._-]/g,'').trim().replace(/\s+/g,'-').slice(0,60)||'facility';
   const name=`RadSa-SA-${safe}-${type}-${new Date().toISOString().slice(0,10)}.json`;
   outFile=new File([JSON.stringify(V)],name,{type:'application/json'});
+  if(SUBMIT_URL){ sendOnline(V,name); return }
   $('#fname').textContent=name; $('#after').classList.remove('hidden');
   const u=$('#upl'); if(UPLOAD_URL){u.href=UPLOAD_URL; u.classList.remove('hidden')}
   $('#howto').textContent=UPLOAD_URL?'Tap “Upload to RadSa” and choose this file, or send it to us by WhatsApp / email.'
@@ -254,6 +256,24 @@ $('#send').onclick=()=>{
   $('#share').classList.toggle('hidden',!(navigator.canShare&&navigator.canShare({files:[outFile]})));
   $('#after').scrollIntoView({behavior:'smooth'});
 };
+async function sendOnline(V,name){
+  const b=$('#send'); b.disabled=true; b.textContent='Sending…'; $('#msg').textContent='';
+  try{
+    const r=await fetch(SUBMIT_URL,{method:'POST',body:JSON.stringify({...V,fileName:name})});
+    const j=await r.json().catch(()=>({ok:r.ok}));
+    if(!j.ok) throw new Error(j.error||('HTTP '+r.status));
+    $('#after').classList.remove('hidden'); $('#after .okmsg').textContent='Sent ✓ – RadSa has received your form. We will contact you soon.';
+    $('#share').classList.add('hidden'); $('#upl').classList.add('hidden'); $('#dl').textContent='Download a copy for your records';
+    $('#howto').textContent=''; try{localStorage.removeItem('radsa_sa_draft')}catch(e){}
+    b.textContent='Sent ✓';
+  }catch(err){
+    b.disabled=false; b.textContent='Prepare & send';
+    $('#msg').textContent='Could not send automatically ('+err.message+'). Please download the file below and send it to RadSa by WhatsApp or email.';
+    $('#after').classList.remove('hidden'); $('#fname').textContent=name;
+    $('#share').classList.toggle('hidden',!(navigator.canShare&&navigator.canShare({files:[outFile]})));
+  }
+  $('#after').scrollIntoView({behavior:'smooth'});
+}
 $('#share').onclick=async()=>{try{await navigator.share({files:[outFile],title:'RadSa safety assessment form',text:'Safety assessment information – '+$('#fac').value})}catch(e){}};
 $('#dl').onclick=()=>{const a=document.createElement('a'); a.href=URL.createObjectURL(outFile); a.download=outFile.name; a.click()};
 })();
