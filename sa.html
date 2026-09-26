@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RadSa – Radiation Safety Assessment form</title>
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--blue:#006EBD;--ink:#1d2733;--muted:#5d6b7a;--line:#d7dee6;--bg:#f4f7fa;--card:#fff;--bad:#b3261e;--ok:#1e7b3a}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+header{background:var(--blue);color:#fff;padding:18px 16px}
+header h1{margin:0;font-size:20px}
+header p{margin:4px 0 0;opacity:.9;font-size:14px}
+main{max-width:860px;margin:0 auto;padding:16px}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin:0 0 16px}
+h2{margin:0 0 4px;font-size:18px;color:var(--blue)}
+.sub{color:var(--muted);font-size:14px;margin:0 0 12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid .wide{grid-column:1/-1}
+@media(max-width:620px){.grid{grid-template-columns:1fr}}
+label{display:block;font-weight:600;font-size:14px;margin-bottom:4px}
+label .u{font-weight:400;color:var(--muted)}
+input,select,textarea{width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--blue);border-color:var(--blue)}
+.h{color:var(--muted);font-size:13px;margin-top:3px}
+.btn{display:inline-block;border:0;border-radius:8px;padding:11px 16px;font:inherit;font-weight:600;background:var(--blue);color:#fff;cursor:pointer;text-decoration:none}
+.btn.ghost{background:#fff;color:var(--blue);border:1px solid var(--blue)}
+.btn.sm{padding:7px 11px;font-size:14px}
+.btn:disabled{opacity:.5}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tools .btn.on{outline:3px solid #ffb300}
+#stage{position:relative;margin-top:10px;border:1px dashed var(--line);border-radius:8px;overflow:hidden;background:#fafbfc;min-height:60px}
+#stage canvas{display:block;width:100%;height:auto;touch-action:manipulation}
+.wall{border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:10px}
+.wall h3{margin:0 0 8px;font-size:16px}
+.tag{display:inline-block;min-width:28px;text-align:center;background:#c62828;color:#fff;border-radius:6px;padding:1px 6px;margin-right:6px}
+.err{color:var(--bad);font-size:14px;margin-top:8px}
+.okmsg{color:var(--ok);font-weight:600}
+.hidden{display:none}
+footer{color:var(--muted);font-size:12px;text-align:center;padding:10px 0 30px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Radiation Safety Assessment – information form</h1>
+  <p>RadSa Physics Consultancies &amp; Training · takes about 10 minutes · your answers stay on this device until you send them</p>
+</header>
+<main>
+
+<section>
+  <h2>1. Facility</h2>
+  <div class="grid">
+    <div class="wide"><label for="fac">Facility legal name (as on the licence) *</label><input id="fac" autocomplete="organization"></div>
+    <div><label for="city">City / Emirate *</label><input id="city" placeholder="Abu Dhabi"></div>
+    <div><label for="contact">Contact person</label><input id="contact" autocomplete="name"></div>
+    <div><label for="phone">Phone</label><input id="phone" type="tel" autocomplete="tel"></div>
+    <div><label for="email">Email</label><input id="email" type="email" autocomplete="email"></div>
+  </div>
+</section>
+
+<section>
+  <h2>2. X-ray equipment</h2>
+  <p class="sub">One form per X-ray room / machine.</p>
+  <div class="grid">
+    <div><label for="type">Type of equipment *</label>
+      <select id="type">
+        <option value="">— choose —</option>
+        <option value="CBCT">Dental CBCT (3D)</option><option value="OPG">Dental panoramic (OPG)</option>
+        <option value="XR">Fixed X-ray (radiography room)</option><option value="MOBILE">Mobile X-ray</option>
+        <option value="CT">CT scanner</option><option value="MAMMO">Mammography</option>
+        <option value="FLUORO">Fluoroscopy</option><option value="CARM">C-arm</option>
+        <option value="CATH">Cath lab / angiography</option><option value="BMD">Bone densitometry (DXA)</option>
+      </select></div>
+    <div><label for="room">Room name</label><input id="room" placeholder="e.g. CBCT Room"></div>
+    <div><label for="man">Manufacturer</label><input id="man" list="dl_man" autocomplete="off"></div>
+    <div><label for="model">Model</label><input id="model" list="dl_model" autocomplete="off"></div>
+    <div><label for="kv">Maximum kV <span class="u">kV</span></label><input id="kv" inputmode="decimal"></div>
+    <div><label for="ma">Maximum mA <span class="u">mA</span></label><input id="ma" inputmode="decimal"></div>
+    <div id="pw"><label for="pat">Patients per week (maximum expected) *</label><input id="pat" inputmode="numeric"></div>
+    <div id="ctw" class="hidden"><label>CT examinations per week *</label>
+      <div class="row"><input id="cth" inputmode="numeric" placeholder="Head" style="flex:1"><input id="ctb" inputmode="numeric" placeholder="Body" style="flex:1"></div></div>
+  </div>
+  <datalist id="dl_man"></datalist><datalist id="dl_model"></datalist>
+</section>
+
+<section>
+  <h2>3. Floor plan</h2>
+  <p class="sub">Upload the room layout (photo, image or PDF). Then tap the plan to mark: <b>★ the machine</b>, <b>each wall / door / window</b> around the room (A, B, C …) and <b>● where the operator presses the exposure button</b>.</p>
+  <div class="row"><label class="btn ghost" style="margin:0">Upload plan<input id="planIn" type="file" accept="image/*,application/pdf" class="hidden"></label>
+    <span id="planName" class="h"></span></div>
+  <div class="row tools" style="margin-top:10px">
+    <button class="btn sm ghost" data-tool="machine">★ Machine</button>
+    <button class="btn sm ghost on" data-tool="wall">Wall / door / window: <span id="nextL">A</span></button>
+    <button class="btn sm ghost" data-tool="operator">● Operator</button>
+    <button class="btn sm ghost" id="undo">Undo</button>
+  </div>
+  <div id="stage"><canvas id="cv" width="10" height="10"></canvas><p id="stageHint" class="h" style="padding:12px">The plan will appear here.</p></div>
+</section>
+
+<section>
+  <h2>4. Around the room</h2>
+  <p class="sub">For every letter you marked: what is on the other side, and how far it is from the machine.</p>
+  <div id="walls"></div>
+  <div class="row" style="margin-top:10px"><button class="btn sm ghost" id="addWall">+ Add a wall without marking</button></div>
+</section>
+
+<section>
+  <h2>5. Above and below the room</h2>
+  <div class="grid">
+    <div><label for="above">Above the room (ceiling)</label>
+      <select id="above"><option value="1">Occupied room / office</option><option value="0.05">Storage / rarely used</option><option value="none">Roof – nobody goes there</option></select></div>
+    <div><label for="below">Below the room (floor)</label>
+      <select id="below"><option value="none">Ground – nothing below</option><option value="1">Occupied room / office</option><option value="0.025">Car park / basement storage</option></select></div>
+    <div><label for="height">Room height, floor to ceiling <span class="u">m</span></label><input id="height" inputmode="decimal" value="3"></div>
+    <div><label for="slab">Concrete slab thickness <span class="u">mm</span></label><input id="slab" inputmode="numeric" placeholder="e.g. 200"><div class="h">Ask the building engineer if unsure.</div></div>
+    <div class="wide"><label for="notes">Anything else we should know?</label><textarea id="notes" rows="3"></textarea></div>
+  </div>
+</section>
+
+<section>
+  <h2>6. Send to RadSa</h2>
+  <p class="sub">Check your answers, then send. We will prepare the safety assessment and contact you.</p>
+  <div class="row"><button class="btn" id="send">Prepare &amp; send</button></div>
+  <div id="msg" class="err"></div>
+  <div id="after" class="hidden" style="margin-top:12px">
+    <p class="okmsg">Your file is ready: <span id="fname"></span></p>
+    <div class="row">
+      <button class="btn" id="share">Send by WhatsApp / email</button>
+      <button class="btn ghost" id="dl">Download the file</button>
+      <a class="btn ghost hidden" id="upl" target="_blank" rel="noopener">Upload to RadSa</a>
+    </div>
+    <p class="h" id="howto"></p>
+  </div>
+</section>
+<footer>RadSa Physics Consultancies &amp; Training · the information is used only to prepare your radiation safety assessment.</footer>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+(() => {
+/* ====== settings for RadSa (edit these two lines) ====== */
+const UPLOAD_URL = '';                 // OneDrive "Request files" link of the folder  RadSa SA Inbox
+const SEND_TO    = '';                 // WhatsApp number (e.g. 9715xxxxxxxx) or email shown to the client
+/* ======================================================== */
+
+const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const CAT_URL='device_catalog.json'; let CAT={};
+fetch(CAT_URL).then(r=>r.ok?r.json():{}).then(j=>{CAT=j;fillMan()}).catch(()=>{});
+const CATKIND={CBCT:'OPG',OPG:'OPG',XR:'Fixed',MOBILE:'Fixed',CT:'CT',MAMMO:'Mammo',FLUORO:'Fluoro',CARM:'Fluoro',CATH:'Fluoro'};
+function fillMan(){const k=CATKIND[$('#type').value]; const o=CAT[k]||{};
+  $('#dl_man').innerHTML=Object.keys(o).map(m=>`<option value="${esc(m)}">`).join(''); fillModel()}
+function fillModel(){const o=CAT[CATKIND[$('#type').value]]||{}; const m=Object.keys(o).find(x=>x.toLowerCase()===$('#man').value.trim().toLowerCase());
+  const list=m?Object.keys(o[m]):[]; $('#dl_model').innerHTML=list.map(x=>`<option value="${esc(x)}">`).join('')}
+function onModel(){const o=CAT[CATKIND[$('#type').value]]||{}; const m=Object.keys(o).find(x=>x.toLowerCase()===$('#man').value.trim().toLowerCase());
+  const e=m&&Object.entries(o[m]).find(([k])=>k.toLowerCase()===$('#model').value.trim().toLowerCase()); if(!e) return;
+  if(!$('#kv').value&&e[1].kv) $('#kv').value=e[1].kv; if(!$('#ma').value&&e[1].ma) $('#ma').value=e[1].ma; save()}
+$('#type').addEventListener('change',()=>{const ct=$('#type').value==='CT'; $('#ctw').classList.toggle('hidden',!ct); $('#pw').classList.toggle('hidden',ct);
+  if(!$('#room').value){const R={CBCT:'CBCT Room',OPG:'OPG Room',XR:'X-Ray Room',MOBILE:'Ward',CT:'CT Room',MAMMO:'Mammography Room',FLUORO:'Fluoroscopy Room',CARM:'Operating Theatre',CATH:'Cath Lab',BMD:'BMD Room'}; $('#room').value=R[$('#type').value]||''}
+  fillMan(); save()});
+$('#man').addEventListener('input',()=>{fillModel();save()}); $('#model').addEventListener('change',onModel); $('#model').addEventListener('input',onModel);
+
+/* ---------- walls ---------- */
+const SIDES=[['','— choose —'],['ctrl','Control room / operator area (radiation staff)'],['office','Office, reception, nurse station, waiting with staff'],
+ ['exam','Patient examination / treatment room'],['corr','Corridor, staff room, staff toilet'],['door','Door opening to a corridor'],
+ ['public','Public toilet, storage, unattended waiting'],['out','Outside: street, parking, stairs'],['other','Other (describe)']];
+const TMAP={ctrl:1,office:1,exam:0.5,corr:0.2,door:0.125,public:0.05,out:0.025,other:1};
+const SHORT={ctrl:'Control Room',office:'Office',exam:'Treatment Room',corr:'Corridor',door:'Corridor Door',public:'Store / Toilet',out:'Outdoor',other:'Other area'};
+let walls=[];      // {label,x,y,side,other,element,dist,lead,material,operator}
+function wallHTML(w,i){return `<div class="wall" data-i="${i}"><h3><span class="tag">${esc(w.label)}</span>${w.x==null?'(not marked on the plan)':''}</h3>
+ <div class="grid">
+  <div><label>What is on the other side? *</label><select data-f="side">${SIDES.map(([v,t])=>`<option value="${v}" ${w.side===v?'selected':''}>${t}</option>`).join('')}</select></div>
+  <div><label>Name of that room / area</label><input data-f="other" value="${esc(w.other)}" placeholder="e.g. Corridor, Dr office"></div>
+  <div><label>This is a *</label><select data-f="element">${['Wall','Window','Door','Door window'].map(v=>`<option ${w.element===v?'selected':''}>${v}</option>`).join('')}</select></div>
+  <div><label>Distance from the machine to it <span class="u">m</span> *</label><input data-f="dist" inputmode="decimal" value="${esc(w.dist)}"><div class="h">From the centre of the machine (patient) to this wall/door/window.</div></div>
+  <div><label>Wall material</label><select data-f="material">${['','Block / brick','Gypsum board','Concrete','Glass'].map(v=>`<option ${w.material===v?'selected':''} value="${v}">${v||'— not sure —'}</option>`).join('')}</select></div>
+  <div><label>Existing lead, if any <span class="u">mm Pb</span></label><input data-f="lead" inputmode="decimal" value="${esc(w.lead)}" placeholder="leave empty if none / not sure"></div>
+ </div>
+ <div class="row" style="margin-top:8px"><label style="font-weight:400;display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" data-f="operator" ${w.operator?'checked':''} style="width:auto"> The operator presses the exposure button behind this barrier</label>
+ <div style="flex:1"></div><button class="btn sm ghost" data-del="${i}">Remove</button></div></div>`}
+function drawWalls(){$('#walls').innerHTML=walls.map(wallHTML).join('')||'<p class="h">Mark the walls on the plan, or add them here.</p>';
+  $('#walls').querySelectorAll('[data-f]').forEach(el=>el.addEventListener(el.type==='checkbox'?'change':'input',()=>{
+    const w=walls[+el.closest('.wall').dataset.i]; w[el.dataset.f]=el.type==='checkbox'?el.checked:el.value;
+    if(el.dataset.f==='side'&&w.side==='ctrl'&&!walls.some(x=>x.operator)){w.operator=true; drawWalls()} save(); redraw()}));
+  $('#walls').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{walls.splice(+b.dataset.del,1); relabel(); drawWalls(); redraw(); save()});
+  $('#nextL').textContent=nextLabel()}
+const nextLabel=()=>String.fromCharCode(65+walls.length);
+function relabel(){walls.forEach((w,i)=>w.label=String.fromCharCode(65+i))}
+$('#addWall').onclick=()=>{walls.push({label:nextLabel(),x:null,y:null,side:'',other:'',element:'Wall',dist:'',lead:'',material:'',operator:false}); drawWalls(); save()};
+
+/* ---------- plan + marking ---------- */
+const cv=$('#cv'), ctx=cv.getContext('2d'); let img=null, tool='wall', machine=null, operator=null;
+document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{tool=b.dataset.tool; document.querySelectorAll('[data-tool]').forEach(x=>x.classList.toggle('on',x===b))});
+$('#planIn').onchange=async e=>{const f=e.target.files[0]; if(!f) return; $('#planName').textContent=f.name;
+  try{ if(f.type==='application/pdf'||/\.pdf$/i.test(f.name)){
+      if(!window.pdfjsLib) throw new Error('PDF viewer not available – please upload a photo or image of the plan');
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise, pg=await pdf.getPage(1);
+      const vp=pg.getViewport({scale:1}); const s=Math.min(3,2200/Math.max(vp.width,vp.height)); const v2=pg.getViewport({scale:s});
+      const c=document.createElement('canvas'); c.width=v2.width; c.height=v2.height; await pg.render({canvasContext:c.getContext('2d'),viewport:v2}).promise;
+      img=await new Promise(r=>{const i=new Image(); i.onload=()=>r(i); i.src=c.toDataURL('image/png')});
+    } else { img=await new Promise((r,j)=>{const i=new Image(); i.onload=()=>r(i); i.onerror=()=>j(new Error('cannot read this image')); i.src=URL.createObjectURL(f)}) }
+    const s=Math.min(1,2200/Math.max(img.width,img.height)); cv.width=Math.round(img.width*s); cv.height=Math.round(img.height*s);
+    $('#stageHint').classList.add('hidden'); redraw();
+  }catch(err){$('#planName').textContent=err.message}};
+cv.addEventListener('click',e=>{ if(!img) return; const r=cv.getBoundingClientRect(); const x=(e.clientX-r.left)*cv.width/r.width, y=(e.clientY-r.top)*cv.height/r.height;
+  if(tool==='machine') machine={x,y}; else if(tool==='operator') operator={x,y};
+  else { walls.push({label:nextLabel(),x,y,side:'',other:'',element:'Wall',dist:'',lead:'',material:'',operator:false}); drawWalls(); }
+  redraw(); save()});
+$('#undo').onclick=()=>{ const lastMarked=[...walls].reverse().find(w=>w.x!=null); if(operator&&tool==='operator') operator=null; else if(machine&&tool==='machine') machine=null;
+  else if(lastMarked){walls.splice(walls.indexOf(lastMarked),1); relabel(); drawWalls()} redraw(); save()};
+function mark(x,y,text,color){const f=Math.max(18,cv.width/40); ctx.font=`bold ${f}px system-ui,sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.lineWidth=f/5; ctx.strokeStyle='#fff'; ctx.strokeText(text,x,y); ctx.fillStyle=color; ctx.fillText(text,x,y)}
+function redraw(){ if(!img) return; ctx.drawImage(img,0,0,cv.width,cv.height);
+  if(machine) mark(machine.x,machine.y,'★','#c62828');
+  if(operator) mark(operator.x,operator.y,'●','#0d47a1');
+  for(const w of walls) if(w.x!=null) mark(w.x,w.y,w.label,'#c62828') }
+
+/* ---------- draft (fields only) ---------- */
+const IDS=['fac','city','contact','phone','email','type','room','man','model','kv','ma','pat','cth','ctb','above','below','height','slab','notes'];
+function save(){try{localStorage.setItem('radsa_sa_draft',JSON.stringify({f:Object.fromEntries(IDS.map(i=>[i,$('#'+i).value])),walls:walls.map(w=>({...w,x:null,y:null}))}))}catch(e){}}
+try{const d=JSON.parse(localStorage.getItem('radsa_sa_draft')||'null'); if(d){for(const [k,v] of Object.entries(d.f||{})) if($('#'+k)) $('#'+k).value=v; walls=d.walls||[]; $('#type').dispatchEvent(new Event('change'))}}catch(e){}
+IDS.forEach(i=>$('#'+i).addEventListener('input',save)); drawWalls();
+
+/* ---------- build & send ---------- */
+const num=v=>{const n=parseFloat(String(v||'').replace(',','.')); return isNaN(n)?null:n};
+let outFile=null;
+$('#send').onclick=()=>{
+  const miss=[]; const type=$('#type').value;
+  if(!$('#fac').value.trim()) miss.push('facility name'); if(!$('#city').value.trim()) miss.push('city'); if(!type) miss.push('type of equipment');
+  if(type==='CT'){ if(!num($('#cth').value)&&!num($('#ctb').value)) miss.push('CT examinations per week') } else if(!num($('#pat').value)) miss.push('patients per week');
+  if(!walls.length) miss.push('at least one wall');
+  walls.forEach(w=>{ if(!w.side) miss.push(`what is behind ${w.label}`); if(!num(w.dist)) miss.push(`distance to ${w.label}`) });
+  if(miss.length){$('#msg').textContent='Please complete: '+miss.join(', ')+'.'; return} $('#msg').textContent='';
+  const slab=num($('#slab').value), H=num($('#height').value)||3, sm=(slab||0)/1000;
+  const B=walls.map(w=>({label:w.label, area:(w.other||SHORT[w.side]||'').slice(0,60), T:TMAP[w.side]??1,
+      zone:w.side==='ctrl'?'Controlled':'Public', d:Math.round((num(w.dist)+0.3)*100)/100, element:w.element, lead_mm:num(w.lead),
+      operator:!!w.operator, note:[w.material&&('Wall: '+w.material), 'distance given '+num(w.dist)+' m + 0.3 m'].filter(Boolean).join('; ')}));
+  if($('#above').value!=='none') B.push({label:'Ceiling',area:'Room above',T:+$('#above').value,zone:'Public',d:Math.round(((H-1)+sm+0.5)*100)/100,element:'Wall',concrete_mm:slab});
+  if($('#below').value!=='none') B.push({label:'Floor',area:'Room below',T:+$('#below').value,zone:'Public',d:Math.round((1+sm+1.7)*100)/100,element:'Wall',concrete_mm:slab});
+  const V={app:'radsa-sa',version:1,submittedAt:new Date().toISOString(),
+    facility:{name:$('#fac').value.trim(),city:$('#city').value.trim(),contact:$('#contact').value.trim(),phone:$('#phone').value.trim(),email:$('#email').value.trim()},
+    equipment:{type,room:$('#room').value.trim(),manufacturer:$('#man').value.trim(),model:$('#model').value.trim(),max_kv:num($('#kv').value),max_ma:num($('#ma').value),
+      patients:num($('#pat').value),ct_head:num($('#cth').value),ct_body:num($('#ctb').value)},
+    slab_mm:slab, room_height_m:H, notes:$('#notes').value.trim(), barriers:B,
+    plan_png: img? cv.toDataURL('image/png').split(',')[1] : null};
+  const safe=V.facility.name.replace(/[^A-Za-z0-9 ._-]/g,'').trim().replace(/\s+/g,'-').slice(0,60)||'facility';
+  const name=`RadSa-SA-${safe}-${type}-${new Date().toISOString().slice(0,10)}.json`;
+  outFile=new File([JSON.stringify(V)],name,{type:'application/json'});
+  $('#fname').textContent=name; $('#after').classList.remove('hidden');
+  const u=$('#upl'); if(UPLOAD_URL){u.href=UPLOAD_URL; u.classList.remove('hidden')}
+  $('#howto').textContent=UPLOAD_URL?'Tap “Upload to RadSa” and choose this file, or send it to us by WhatsApp / email.'
+     :('Send this file to RadSa by WhatsApp or email'+(SEND_TO?' ('+SEND_TO+')':'')+'.');
+  $('#share').classList.toggle('hidden',!(navigator.canShare&&navigator.canShare({files:[outFile]})));
+  $('#after').scrollIntoView({behavior:'smooth'});
+};
+$('#share').onclick=async()=>{try{await navigator.share({files:[outFile],title:'RadSa safety assessment form',text:'Safety assessment information – '+$('#fac').value})}catch(e){}};
+$('#dl').onclick=()=>{const a=document.createElement('a'); a.href=URL.createObjectURL(outFile); a.download=outFile.name; a.click()};
+})();
+</script>
+</body>
+</html>
