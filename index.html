@@ -307,6 +307,8 @@ function wireCatalog(){
 const PHOTO_LABELS = ['Defect (image)','Defect (photo)','Rating plate','Tube plate','Console / settings','Survey meter','Phantom image','Room layout','Other'];
 
 /* ---------- local storage on this phone (IndexedDB) ---------- */
+/* Google Apps Script web-app (RadSa receiver): visits go straight to Google Drive › RadSa Inbox → laptop makes the reports */
+const SUBMIT_URL='https://script.google.com/macros/s/AKfycby5gM35XFLrGqTFa4Zggc7xezh0EeocKoDZKaw8Z7eNkEKZqHwqxlx4Pcvs3nepzBnW/exec';
 const DBNAME='radsa-field', STORES=['visits','units','photos'];
 let idb=null;
 function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DBNAME,1);
@@ -448,7 +450,7 @@ function renderVisit(){
     for(const u of us){for(const p of u.photos||[]) await del('photos',p.id); await del('units',u.id)}
     await del('visits',v.id); visits=visits.filter(x=>x.id!==v.id); units=units.filter(x=>x.visitId!==v.id); view={name:'visits'}; render()};
   const open=us.filter(u=>missing(u).length||Object.values(warnings(u)).some(x=>x.bad)).length;
-  setBar(`<button class="btn" id="exp" ${us.length?'':'disabled'}>Send to laptop</button>`);
+  setBar(`<button class="btn" id="exp" ${us.length?'':'disabled'}>${v.exportedAt?'Submit again (update)':'Submit'}</button>`);
   $('#exp').onclick=()=>exportVisit(v,us,open);
 }
 
@@ -558,7 +560,24 @@ async function exportVisit(v,us,open){
   setSave('Preparing…');
   const payload=await visitPayload(v,us);
   const name=`visit_${v.date}_${v.facility.replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)}.json`;
-  const ok=await shareOrDownload(name,JSON.stringify(payload),'RadSa visit');
+  const body=JSON.stringify(payload);
+  const b=document.getElementById('exp');
+  if(SUBMIT_URL && navigator.onLine!==false){
+    if(b){b.disabled=true; b.textContent='Submitting…'}
+    try{
+      const r=await fetch(SUBMIT_URL,{method:'POST',body:JSON.stringify({...payload,fileName:name})});
+      const j=await r.json().catch(()=>({ok:r.ok}));
+      if(!j.ok) throw new Error(j.error||('HTTP '+r.status));
+      v.exportedAt=Date.now(); await put('visits',v);
+      if(b){b.disabled=false; b.textContent='Submitted ✓'}
+      setSave(open?`Submitted ✓ – ${open} unit(s) still incomplete`:'Submitted ✓ – reports will be made on the laptop');
+      return;
+    }catch(err){
+      if(b){b.disabled=false; b.textContent='Submit'}
+      setSave('Could not submit ('+(err?.message||'no internet')+') – saving the file instead',1);
+    }
+  }
+  const ok=await shareOrDownload(name,body,'RadSa visit');
   if(ok){v.exportedAt=Date.now(); await put('visits',v); setSave(open?`Sent – ${open} unit(s) still incomplete`:'Sent')} else setSave('');
 }
 async function backup(){
