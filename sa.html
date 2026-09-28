@@ -172,7 +172,7 @@ function wallHTML(w,i){return `<div class="wall" data-i="${i}"><h3><span class="
  <div class="grid">
   <div><label>What is on the other side? *</label><select data-f="side">${SIDES.map(([v,t])=>`<option value="${v}" ${w.side===v?'selected':''}>${t}</option>`).join('')}</select></div>
   <div><label>Name of that room / area</label><input data-f="other" value="${esc(w.other)}" placeholder="e.g. Corridor, Dr office"></div>
-  <div><label>This is a *</label><select data-f="element">${['Wall','Window','Door','Door window'].map(v=>`<option ${w.element===v?'selected':''}>${v}</option>`).join('')}</select></div>
+  <div><label>This is a *</label><select data-f="element">${['Wall','Window','Door','Door window','Control booth (inside room)'].map(v=>`<option ${w.element===v?'selected':''}>${v}</option>`).join('')}</select></div>
   <div><label>Distance from the machine to it <span class="u">m</span> *</label><input data-f="dist" inputmode="decimal" value="${esc(w.dist)}"><div class="h">From the centre of the machine (patient) to this wall/door/window.</div></div>
   <div><label>Wall material</label><select data-f="material">${['','Block / brick','Gypsum board','Concrete','Glass'].map(v=>`<option ${w.material===v?'selected':''} value="${v}">${v||'— not sure —'}</option>`).join('')}</select></div>
   <div><label>Existing lead, if any <span class="u">mm Pb</span></label><input data-f="lead" inputmode="decimal" value="${esc(w.lead)}" placeholder="leave empty if none / not sure"></div>
@@ -234,9 +234,10 @@ $('#send').onclick=()=>{
   walls.forEach(w=>{ if(!w.side) miss.push(`what is behind ${w.label}`); if(!num(w.dist)) miss.push(`distance to ${w.label}`) });
   if(miss.length){$('#msg').textContent='Please complete: '+miss.join(', ')+'.'; return} $('#msg').textContent='';
   const slab=num($('#slab').value), H=num($('#height').value)||3, sm=(slab||0)/1000;
-  const B=walls.map(w=>({label:w.label, area:(w.other||SHORT[w.side]||'').slice(0,60), T:w.operator?1:(TMAP[w.side]??1),
-      zone:w.side==='ctrl'?'Controlled':'Public', d:Math.round((num(w.dist)+0.3)*100)/100, element:w.element, lead_mm:num(w.lead),
-      operator:!!w.operator, note:[w.material&&('Wall: '+w.material), 'distance given '+num(w.dist)+' m + 0.3 m'].filter(Boolean).join('; ')}));
+  const isBooth=w=>/booth/i.test(w.element||''), anyOp=walls.some(x=>x.operator);
+  const B=walls.map(w=>({label:w.label, area:(w.other||SHORT[w.side]||'').slice(0,60), T:(w.operator||isBooth(w))?1:(TMAP[w.side]??1),
+      zone:(w.side==='ctrl'||isBooth(w))?'Controlled':'Public', d:Math.round((num(w.dist)+0.3)*100)/100, element:w.element, lead_mm:num(w.lead),
+      operator:!!w.operator||(isBooth(w)&&!anyOp), note:[w.material&&('Wall: '+w.material), 'distance given '+num(w.dist)+' m + 0.3 m'].filter(Boolean).join('; ')}));
   if($('#above').value!=='none') B.push({label:'Ceiling',area:'Room above',T:+$('#above').value,zone:'Public',d:Math.round(((H-1)+sm+0.5)*100)/100,element:'Wall',concrete_mm:slab});
   if($('#below').value!=='none') B.push({label:'Floor',area:'Room below',T:+$('#below').value,zone:'Public',d:Math.round((1+sm+1.7)*100)/100,element:'Wall',concrete_mm:slab});
   const V={app:'radsa-sa',version:1,submittedAt:new Date().toISOString(),
